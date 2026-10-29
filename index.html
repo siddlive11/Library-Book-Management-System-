@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>LibraryOS | Smart RFID Library Management</title>
+<meta name="description" content="One scan verifies the student, records the loan and updates availability. A complete smart library system.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lime:#C6FF35; --lime-soft:rgba(198,255,53,.12); --em:#0c3b2a; --em-2:#0f6b45;
+  --txt:#f4f6f3; --mut:#8b938c; --dim:#5a615b;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
+  --warn:#ff7a52;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --font:"Inter Tight","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:90px}
+body{background:#000;color:var(--txt);font-family:var(--font);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit}
+:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:8px}
+::selection{background:var(--lime);color:#000}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* atmosphere */
+.atmos{position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+  radial-gradient(60% 45% at 50% -5%,rgba(15,107,69,.30),transparent 70%),
+  radial-gradient(40% 35% at 95% 65%,rgba(12,59,42,.38),transparent 70%),
+  radial-gradient(35% 30% at 0% 90%,rgba(12,59,42,.28),transparent 70%),#000}
+#ribbons{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;transform:translateZ(0)}
+
+/* glass */
+.glass{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)),rgba(4,7,5,.6);border:1px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 30px 60px -30px rgba(0,0,0,.9)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .5s;
+  background:radial-gradient(380px circle at var(--mx,50%) var(--my,0%),rgba(198,255,53,.10),transparent 60%)}
+.glass:hover::before{opacity:1}
+.app::before,.dash::before,.statbar-in::before{display:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:50px;padding:0 28px;border-radius:999px;font-weight:600;font-size:16px;letter-spacing:-.01em;transition:box-shadow .5s var(--ease),transform .5s var(--ease),border-color .4s,color .4s}
+.btn-primary{background:var(--lime);color:#040800}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--lime),0 0 24px rgba(198,255,53,.55),0 12px 60px rgba(198,255,53,.35)}
+.btn-primary:active{transform:none}
+.btn-ghost{border:1px solid var(--line-2);background:rgba(255,255,255,.03)}
+.btn-ghost:hover{border-color:rgba(198,255,53,.6);color:var(--lime);box-shadow:0 0 28px rgba(198,255,53,.18)}
+.btn-sm{height:40px;padding:0 20px;font-size:15px}
+.btn-xs{height:38px;padding:0 18px;font-size:14.5px}
+.btn .ic{width:17px;height:17px}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:60;opacity:0;transition:background .5s,border-color .5s;border-bottom:1px solid transparent}
+.nav.solid{background:rgba(0,0,0,.82);border-bottom-color:var(--line)}
+.nav-in{max-width:1240px;margin:0 auto;height:76px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:21px;letter-spacing:-.04em}
+.logo svg{width:26px;height:26px;filter:drop-shadow(0 0 8px rgba(198,255,53,.6))}
+.links{display:flex;gap:6px}
+.links a{padding:8px 16px;border-radius:999px;color:var(--mut);font-size:15px;font-weight:500;transition:color .3s,background .3s}
+.links a:hover{color:var(--txt);background:rgba(255,255,255,.06)}
+.burger{display:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--line-2);align-items:center;justify-content:center}
+.burger span{display:block;width:16px;height:1.5px;background:var(--txt);position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:16px;height:1.5px;background:var(--txt);transition:transform .4s var(--ease)}
+.burger span::before{top:-5px}.burger span::after{top:5px}
+.nav.open .burger span{background:transparent}
+.nav.open .burger span::before{transform:translateY(5px) rotate(45deg)}
+.nav.open .burger span::after{transform:translateY(-5px) rotate(-45deg)}
+
+/* hero */
+.hero{padding:166px 24px 40px;text-align:center}
+.hero-copy{max-width:1000px;margin:0 auto;will-change:transform,opacity}
+h1{font-size:clamp(2.7rem,7.2vw,6.2rem);line-height:.98;font-weight:600;letter-spacing:-.055em;max-width:11.5em;margin:0 auto}
+.word{display:inline-block;opacity:0;filter:blur(16px);transform:translateY(45%);margin-right:.22em}
+.word:last-child{margin-right:0}
+.lede{margin:30px auto 0;max-width:36em;color:var(--mut);font-size:clamp(1.02rem,1.5vw,1.2rem);line-height:1.6;opacity:0}
+.cta-row{margin-top:40px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;opacity:0}
+body.ready .nav{animation:fadeIn 1.4s ease .8s forwards}
+body.ready .word{animation:wordIn 1.6s var(--ease) forwards;animation-delay:calc(1.3s + var(--i)*.1s)}
+body.ready .lede{animation:fadeUp 1.4s var(--ease) 2.3s forwards}
+body.ready .hero .cta-row{animation:fadeUp 1.4s var(--ease) 2.5s forwards}
+body.ready .stage{animation:stageIn 2s var(--ease) 2.8s forwards}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes wordIn{to{opacity:1;filter:blur(0);transform:none}}
+@keyframes stageIn{from{opacity:0;transform:translateY(80px)}to{opacity:1;transform:none}}
+
+/* hero dashboard */
+.stage{position:relative;max-width:1060px;margin:80px auto 0;perspective:1800px;opacity:0;text-align:left}
+.stage::after{content:"";position:absolute;left:8%;right:8%;bottom:-70px;height:160px;background:radial-gradient(50% 100% at 50% 0%,rgba(198,255,53,.22),transparent 70%);filter:blur(30px);z-index:-1;pointer-events:none}
+.tilt{transform-style:preserve-3d;will-change:transform}
+.dash{border-radius:28px;padding:26px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)),rgba(3,6,4,.78)}
+.dtop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
+.dtop h3{font-size:20px;font-weight:600;letter-spacing:-.03em;line-height:1.2}
+.dtop p{color:var(--mut);font-size:14px}
+.live{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 14px;border-radius:999px;border:1px solid rgba(198,255,53,.3);background:var(--lime-soft);color:var(--lime);font-size:13px;font-weight:600;white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35;transform:scale(.7)}}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.tile{border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:16px;padding:18px 20px;min-width:0}
+.kpi .l{display:block;color:var(--mut);font-size:13.5px}
+.kpi .v{display:block;font-size:clamp(1.7rem,3vw,2.3rem);font-weight:600;letter-spacing:-.045em;line-height:1.15;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .v.warn{color:var(--warn)}
+.kpi small{font-size:13px;color:var(--lime);font-weight:600}
+.kpi small.mut{color:var(--mut);font-weight:500}
+.dgrid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+.tile-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;gap:10px}
+.tile-h b{font-weight:600;font-size:15px;letter-spacing:-.02em}
+.tile-h span{color:var(--mut);font-size:13px}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.grid-l{stroke:rgba(255,255,255,.06);stroke-width:1}
+.c-line{fill:none;stroke:var(--lime);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 7px rgba(198,255,53,.65));stroke-dasharray:1;stroke-dashoffset:1}
+.c-area{opacity:0;transition:opacity 1.6s ease .8s}
+.chart.in .c-line{stroke-dashoffset:0;transition:stroke-dashoffset 2.4s var(--ease)}
+.chart.in .c-area{opacity:1}
+.c-dot{fill:var(--lime);opacity:0;transition:opacity .6s ease 2s}
+.chart.in .c-dot{opacity:1}
+.c-halo{fill:var(--lime);opacity:0;transform-box:fill-box;transform-origin:center}
+.chart.in .c-halo{animation:halo 2.2s ease-out 2.2s infinite}
+@keyframes halo{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(3.2)}}
+.feed{list-style:none;display:flex;flex-direction:column;min-height:196px}
+.feed li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.35;animation:feedIn .8s var(--ease)}
+.feed li:last-child{border-bottom:0}
+.feed .fi{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--lime-soft);color:var(--lime)}
+.feed .fi .ic{width:15px;height:15px}
+.feed .fi.no{background:rgba(255,122,82,.14);color:var(--warn)}
+.feed small{display:block;color:var(--mut);font-size:12.5px}
+@keyframes feedIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+
+/* stats bar */
+.statbar{max-width:1240px;margin:90px auto 0;padding:0 28px}
+.statbar-in{display:grid;grid-template-columns:repeat(5,1fr);border-radius:24px;padding:10px}
+.stat{padding:22px 26px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat b{display:block;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:600;letter-spacing:-.05em;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mut);font-size:14px}
+
+/* sections */
+.sec{max-width:1240px;margin:0 auto;padding:150px 28px 0}
+.sec-head{max-width:760px;margin-bottom:60px}
+h2{font-size:clamp(2.1rem,4.6vw,3.8rem);font-weight:600;line-height:1.03;letter-spacing:-.05em}
+.sec-head p{color:var(--mut);margin-top:20px;max-width:34em;font-size:1.08rem}
+.rv{opacity:0;transform:translateY(34px);transition:opacity 1.1s var(--ease) var(--d,0s),transform 1.1s var(--ease) var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+
+/* modules */
+.mods{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.mod{text-align:left;border-radius:24px;padding:28px;display:flex;flex-direction:column;min-height:230px;overflow:hidden;transition:transform .6s var(--ease),border-color .4s;color:inherit}
+.mod:hover{transform:translateY(-4px);border-color:rgba(198,255,53,.35)}
+.mod.w2{grid-column:span 2}
+.mod .mi{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--lime-soft);color:var(--lime);border:1px solid rgba(198,255,53,.2);margin-bottom:auto;transition:box-shadow .5s,background .5s}
+.mod:hover .mi{background:var(--lime);color:#040800;box-shadow:0 0 28px rgba(198,255,53,.5)}
+.mod h3{font-size:1.25rem;font-weight:600;letter-spacing:-.035em;margin-top:34px;line-height:1.2}
+.mod p{color:var(--mut);font-size:.95rem;margin-top:8px}
+.mod .art{position:absolute;right:26px;top:26px;pointer-events:none}
+.scan-art{width:150px;height:86px;border-radius:14px;border:1px solid var(--line-2);background:rgba(0,0,0,.4);position:relative;overflow:hidden;font-size:11.5px;color:var(--mut);padding:12px 14px;line-height:1.7}
+.scan-art b{color:var(--txt);font-weight:600}
+.scan-art::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;will-change:transform;background:linear-gradient(90deg,transparent,var(--lime),transparent);box-shadow:0 0 14px var(--lime);animation:scanY 2.8s var(--ease) infinite}
+@keyframes scanY{0%{transform:translateY(-4px);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateY(86px);opacity:0}}
+.gate-art{width:92px;height:92px;position:relative}
+.gate-art i{position:absolute;inset:0;border-radius:50%;border:1px solid var(--lime);animation:ring 3s ease-out infinite;opacity:0}
+.gate-art i:nth-child(2){animation-delay:1s}.gate-art i:nth-child(3){animation-delay:2s}
+.gate-art em{position:absolute;inset:36px;border-radius:50%;background:var(--lime);box-shadow:0 0 24px var(--lime)}
+@keyframes ring{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.15);opacity:0}}
+
+/* workspace */
+.app{border-radius:30px;overflow:hidden;background:linear-gradient(180deg,rgba(8,12,9,.82),rgba(4,6,5,.78))}
+.app-top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 26px;border-bottom:1px solid var(--line)}
+.app-top b{font-weight:600;letter-spacing:-.02em;font-size:16px}
+.app-top small{color:var(--mut);font-size:13.5px}
+.app-in{display:grid;grid-template-columns:230px 1fr;min-height:640px}
+.side{padding:16px 12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.side button{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:12px;color:var(--mut);font-size:15px;font-weight:500;text-align:left;transition:color .3s,background .3s}
+.side button:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+.side button[aria-selected="true"]{color:var(--lime);background:var(--lime-soft);box-shadow:inset 0 0 0 1px rgba(198,255,53,.18)}
+.main{padding:32px;min-width:0}
+.panel{display:none}
+.panel.on{display:block;animation:panelIn .7s var(--ease)}
+@keyframes panelIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.panel h3{font-size:1.5rem;font-weight:600;letter-spacing:-.04em;line-height:1.2}
+.psub{color:var(--mut);font-size:15px;margin:4px 0 26px}
+.hd{font-size:15px;font-weight:600;letter-spacing:-.02em;margin:30px 0 12px}
+.cards4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.cards4 .tile .v{font-size:2rem;font-weight:600;letter-spacing:-.05em;line-height:1.15;font-variant-numeric:tabular-nums}
+.cards4 .tile .l{color:var(--mut);font-size:13.5px}
+.cards4 .tile .v.warn{color:var(--warn)}
+.cards4 .tile .v.lime{color:var(--lime)}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:13.5px;color:var(--mut);font-weight:500}
+.field input,.field select{height:46px;padding:0 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line-2);color:var(--txt);outline:none;width:100%;transition:border-color .3s,box-shadow .3s,background .3s;color-scheme:dark}
+.field input::placeholder{color:var(--dim)}
+.field input:focus,.field select:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(198,255,53,.14);background:rgba(198,255,53,.04)}
+.field select option{background:#0a0e0b}
+
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.015)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:560px}
+th{text-align:left;padding:13px 18px;color:var(--mut);font-size:13px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:13px 18px;border-top:1px solid rgba(255,255,255,.05);vertical-align:middle}
+tbody tr:first-child td{border-top:0}
+tbody tr{transition:background .25s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td.code{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13.5px;letter-spacing:.01em}
+td.mut{color:var(--mut)}
+.badge{display:inline-flex;align-items:center;height:24px;padding:0 11px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--line-2);color:var(--mut);white-space:nowrap}
+.badge.ok{color:var(--lime);border-color:rgba(198,255,53,.3);background:var(--lime-soft)}
+.badge.out{color:var(--txt);border-color:var(--line-2);background:rgba(255,255,255,.05)}
+.badge.late{color:var(--warn);border-color:rgba(255,122,82,.35);background:rgba(255,122,82,.1)}
+
+.search{position:relative;margin-bottom:16px}
+.search .ic{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
+.search input{width:100%;height:52px;border-radius:16px;padding:0 18px 0 48px;background:rgba(255,255,255,.04);border:1px solid var(--line-2);color:var(--txt);outline:none;transition:border-color .3s,box-shadow .3s}
+.search input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(198,255,53,.14)}
+.seg{display:inline-flex;padding:4px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.35);margin-bottom:18px;flex-wrap:wrap}
+.seg button{height:36px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:500;color:var(--mut);transition:color .3s,background .4s,box-shadow .4s}
+.seg button:hover{color:var(--txt)}
+.seg button[aria-pressed="true"]{background:var(--lime);color:#040800;font-weight:600;box-shadow:0 0 20px rgba(198,255,53,.3)}
+.res{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 20px;border:1px solid var(--line);border-radius:16px;margin-bottom:10px;background:rgba(255,255,255,.025);transition:border-color .3s,background .3s}
+.res:hover{border-color:rgba(198,255,53,.28);background:rgba(198,255,53,.03)}
+.res b{font-weight:600;font-size:16px;letter-spacing:-.02em}
+.res small{display:block;color:var(--mut);font-size:13.5px;margin-top:2px}
+.res small strong{color:var(--txt);font-weight:600}
+.empty{color:var(--mut);padding:20px 4px}
+
+.result{display:none;border-radius:18px;padding:20px 22px;margin-top:20px;border:1px solid var(--line-2)}
+.result.show{display:block;animation:panelIn .6s var(--ease)}
+.result.ok{background:var(--lime-soft);border-color:rgba(198,255,53,.35);box-shadow:0 0 40px rgba(198,255,53,.12)}
+.result.no{background:rgba(255,122,82,.1);border-color:rgba(255,122,82,.4);box-shadow:0 0 40px rgba(255,122,82,.12)}
+.result b{display:block;font-size:1.1rem;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.result span{color:var(--mut);font-size:15px}
+.result.ok b{color:var(--lime)}.result.no b{color:var(--warn)}
+.fine-n{font-size:3rem;font-weight:600;letter-spacing:-.05em;line-height:1.1;color:var(--lime)}
+
+/* toast */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{min-width:260px;max-width:360px;padding:14px 18px;border-radius:16px;background:rgba(10,14,11,.9);border:1px solid var(--line-2);backdrop-filter:blur(14px);font-size:14.5px;line-height:1.4;display:flex;gap:12px;align-items:flex-start;box-shadow:0 20px 50px rgba(0,0,0,.6);animation:toastIn .6s var(--ease);transition:opacity .4s,transform .4s}
+.toast .ic{width:18px;height:18px;margin-top:1px;color:var(--lime)}
+.toast.warn{border-color:rgba(255,122,82,.4)}.toast.warn .ic{color:var(--warn)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+
+/* workflow */
+.wf{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px;align-items:start}
+.wf .sec-head{position:sticky;top:120px;margin:0}
+.tl{position:relative;padding-left:70px}
+.tl-track{position:absolute;left:19px;top:20px;bottom:20px;width:2px;background:var(--line)}
+.tl-fill{position:absolute;left:0;top:0;width:2px;height:var(--p,0px);background:linear-gradient(180deg,var(--em-2),var(--lime));box-shadow:0 0 14px var(--lime)}
+.tl-step{position:relative;padding:0 0 60px}
+.tl-step:last-child{padding-bottom:0}
+.tl-n{position:absolute;left:-70px;top:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#050805;border:1px solid var(--line-2);color:var(--mut);font-weight:600;font-size:15px;transition:all .6s var(--ease)}
+.tl-step.on .tl-n{border-color:var(--lime);color:var(--lime);box-shadow:0 0 22px rgba(198,255,53,.4)}
+.tl-step h3{font-size:1.4rem;font-weight:600;letter-spacing:-.035em;line-height:1.25;padding-top:6px}
+.tl-step p{color:var(--mut);margin-top:8px;max-width:32em}
+
+/* tech */
+.tech{display:grid;grid-template-columns:1fr 1fr;column-gap:56px}
+.tech-row{display:flex;gap:20px;padding:28px 0;border-top:1px solid var(--line)}
+.tech-row .mi{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--lime-soft);color:var(--lime);border:1px solid rgba(198,255,53,.2);flex:none}
+.tech-row h3{font-size:1.15rem;font-weight:600;letter-spacing:-.03em}
+.tech-row p{color:var(--mut);font-size:.98rem;margin-top:4px}
+
+/* team */
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.person{border-radius:24px;padding:30px 26px}
+.person .av{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-size:1.4rem;font-weight:600;color:var(--lime);border:1px solid rgba(198,255,53,.4);background:radial-gradient(circle at 30% 25%,rgba(198,255,53,.25),rgba(198,255,53,.03));box-shadow:0 0 30px rgba(198,255,53,.15);margin-bottom:22px}
+.person h3{font-size:1.1rem;font-weight:600;letter-spacing:-.025em;line-height:1.3}
+.person p{color:var(--mut);font-size:.95rem;margin-top:4px}
+
+/* finale */
+.finale{max-width:1240px;margin:0 auto;padding:170px 28px 0;text-align:center}
+.finale h2{max-width:11em;margin:0 auto}
+.finale p{color:var(--mut);margin:22px auto 0;max-width:30em;font-size:1.1rem}
+.finale .cta-row{opacity:1;margin-top:38px}
+.finale .cta-row.rv{opacity:0}.finale .cta-row.rv.in{opacity:1}
+.glow{position:relative;height:120px;margin-top:70px}
+.glow::after{content:"";position:absolute;left:5%;right:5%;top:0;height:220px;background:radial-gradient(50% 100% at 50% 0%,rgba(198,255,53,.32),transparent 70%);filter:blur(40px);z-index:-1}
+
+footer{max-width:1240px;margin:60px auto 0;padding:34px 28px 44px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;color:var(--mut);font-size:14.5px}
+footer .logo{font-size:18px;color:var(--txt)}
+footer nav{display:flex;gap:26px;flex-wrap:wrap}
+footer nav a:hover{color:var(--lime)}
+
+/* responsive */
+@media (max-width:1020px){
+  .mods{grid-template-columns:repeat(2,1fr)}
+  .mod.w2{grid-column:span 2}
+  .statbar-in{grid-template-columns:repeat(3,1fr)}
+  .stat:nth-child(3){border-right:0}
+  .stat:nth-child(n+4){border-top:1px solid var(--line)}
+  .wf{grid-template-columns:1fr;gap:40px}.wf .sec-head{position:static}
+  .team{grid-template-columns:repeat(2,1fr)}
+  .cards4{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:820px){
+  .links{display:none}.burger{display:inline-flex}
+  .nav.open .links{display:flex;position:absolute;top:76px;left:16px;right:16px;flex-direction:column;padding:12px;border-radius:22px;background:rgba(8,12,9,.94);backdrop-filter:blur(20px);border:1px solid var(--line-2)}
+  .nav.open .links a{padding:14px 16px;font-size:17px}
+  .dgrid{grid-template-columns:1fr}
+  .app-in{grid-template-columns:1fr}
+  .side{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px;scrollbar-width:none}
+  .side::-webkit-scrollbar{display:none}
+  .side button{flex:none;height:40px;white-space:nowrap}
+  .tech{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  body{font-size:16px}
+  .nav-in{padding:0 18px}
+  .hero{padding-top:128px}.stage{margin-top:56px}
+  .dash{padding:16px;border-radius:24px}
+  .kpis{grid-template-columns:1fr}
+  .kpi{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}.kpi .v{margin:0}
+  .statbar{padding:0 18px;margin-top:64px}
+  .statbar-in{grid-template-columns:1fr 1fr}
+  .stat{padding:18px;border-right:0;border-top:1px solid var(--line)}
+  .stat:nth-child(-n+2){border-top:0}
+  .sec{padding:110px 18px 0}.finale{padding:120px 18px 0}
+  .mods{grid-template-columns:1fr}.mod.w2{grid-column:auto}
+  .mod{min-height:200px;padding:24px}
+  .mod .art{transform:scale(.8);transform-origin:top right;right:20px;top:20px}
+  .main{padding:20px 16px}
+  .app-top{padding:14px 16px}
+  .cards4{grid-template-columns:1fr 1fr}
+  .team{grid-template-columns:1fr}
+  .tl{padding-left:58px}.tl-n{left:-58px}
+  footer{padding:30px 18px 40px}
+  .cta-row .btn{width:100%;max-width:340px}
+  #toast{left:16px;right:16px;bottom:16px}.toast{min-width:0;max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<div class="atmos"></div>
+<canvas id="ribbons" aria-hidden="true"></canvas>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M3 5C8.5 5 10 12 12 19C14 12 15.5 5 21 5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M19 9h3M19 14h3M2 9h3M2 14h3"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></symbol>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a href="#top" class="logo" aria-label="LibraryOS home"><svg viewBox="0 0 24 24" style="fill:none;stroke:#C6FF35;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><use href="#i-logo"/></svg>LibraryOS</a>
+    <nav class="links" aria-label="Primary">
+      <a href="#modules">Modules</a><a href="#workspace">Workspace</a><a href="#workflow">Workflow</a><a href="#tech">Technology</a><a href="#team">Team</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:10px">
+      <a href="#workspace" class="btn btn-primary btn-sm">Open workspace</a>
+      <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-copy" id="heroCopy">
+      <h1 id="h1">Every book, accounted for in one scan.</h1>
+      <p class="lede">LibraryOS reads the student card and the book tag together, records the loan, and updates availability in the same moment. Nothing leaves the building unrecorded.</p>
+      <div class="cta-row">
+        <a href="#workspace" class="btn btn-primary">Open the workspace</a>
+        <a href="#modules" class="btn btn-ghost">Explore modules</a>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="tilt" id="tilt">
+        <div class="dash glass" role="group" aria-label="Live preview of the library desk dashboard">
+          <div class="dtop">
+            <div><h3>Library desk</h3><p>Central campus library, all shelves</p></div>
+            <span class="live"><i></i>Live</span>
+          </div>
+          <div class="kpis">
+            <div class="tile kpi"><span class="l">Books registered</span><b class="v" id="hk1">0</b><small class="mut">on 6 shelves</small></div>
+            <div class="tile kpi"><span class="l">Out on loan</span><b class="v" id="hk2">0</b><small>tracked by RFID</small></div>
+            <div class="tile kpi"><span class="l">Overdue</span><b class="v warn" id="hk3">0</b><small class="mut">&#8377;5 per day</small></div>
+          </div>
+          <div class="dgrid">
+            <div class="tile">
+              <div class="tile-h"><b>Checkouts</b><span>Last 14 days</span></div>
+              <svg class="chart" id="heroChart" viewBox="0 0 600 190" aria-hidden="true"></svg>
+            </div>
+            <div class="tile">
+              <div class="tile-h"><b>Scan feed</b><span>Live</span></div>
+              <ul class="feed" id="feed" aria-live="off"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="statbar rv" id="statbar">
+    <div class="statbar-in glass">
+      <div class="stat"><b id="s1">0</b><span>Books registered</span></div>
+      <div class="stat"><b id="s2">0</b><span>Active loans</span></div>
+      <div class="stat"><b id="s3">0</b><span>Students enrolled</span></div>
+      <div class="stat"><b id="s4">&#8377;0</b><span>Fines collected</span></div>
+      <div class="stat"><b id="s5">0</b><span>Exit checks</span></div>
+    </div>
+  </div>
+
+  <section class="sec" id="modules">
+    <div class="sec-head rv">
+      <h2>Everything a smart library needs.</h2>
+      <p>Eight modules, all connected to the same live records. Pick one to open it in the workspace below.</p>
+    </div>
+    <div class="mods">
+      <button class="mod w2 glass rv" data-open="issue">
+        <span class="art scan-art" aria-hidden="true">STU-004<br><b>RF-2025-0012</b><br>Loan created</span>
+        <span class="mi"><svg class="ic"><use href="#i-out"/></svg></span>
+        <h3>Issue a book</h3><p>Scan the student card and the book tag. The loan is verified and recorded instantly.</p>
+      </button>
+      <button class="mod glass rv" data-open="register" style="--d:.06s">
+        <span class="mi"><svg class="ic"><use href="#i-book"/></svg></span>
+        <h3>Register books</h3><p>Attach an RFID tag to each book with its shelf and category.</p>
+      </button>
+      <button class="mod glass rv" data-open="search" style="--d:.12s">
+        <span class="mi"><svg class="ic"><use href="#i-search"/></svg></span>
+        <h3>Search and locate</h3><p>Find any book and see its shelf and availability.</p>
+      </button>
+      <button class="mod glass rv" data-open="return">
+        <span class="mi"><svg class="ic"><use href="#i-in"/></svg></span>
+        <h3>Return a book</h3><p>Close the loan and put the book back in circulation.</p>
+      </button>
+      <button class="mod glass rv" data-open="fine" style="--d:.06s">
+        <span class="mi"><svg class="ic"><use href="#i-coin"/></svg></span>
+        <h3>Fine calculator</h3><p>Overdue charges worked out from the dates.</p>
+      </button>
+      <button class="mod w2 glass rv" data-open="security" style="--d:.12s">
+        <span class="art gate-art" aria-hidden="true"><i></i><i></i><i></i><em></em></span>
+        <span class="mi"><svg class="ic"><use href="#i-shield"/></svg></span>
+        <h3>Exit security</h3><p>The gate reads every tag. Valid loans pass, unrecorded removals raise the alarm.</p>
+      </button>
+      <button class="mod w2 glass rv" data-open="users">
+        <span class="mi"><svg class="ic"><use href="#i-users"/></svg></span>
+        <h3>Student management</h3><p>Profiles, RFID cards, current loans and due dates in one list.</p>
+      </button>
+      <button class="mod w2 glass rv" data-open="dashboard" style="--d:.08s">
+        <span class="mi"><svg class="ic"><use href="#i-grid"/></svg></span>
+        <h3>Admin dashboard</h3><p>Books, loans, overdue items and the full transaction history at a glance.</p>
+      </button>
+    </div>
+  </section>
+
+  <section class="sec" id="workspace">
+    <div class="sec-head rv">
+      <h2>Try it yourself.</h2>
+      <p>This workspace is fully working. Issue a book, return it late, then walk it past the exit gate and watch the numbers above change.</p>
+    </div>
+    <div class="app glass rv">
+      <div class="app-top"><b>LibraryOS workspace</b><small>CSE, Data Science</small></div>
+      <div class="app-in">
+        <div class="side" role="tablist" aria-label="Workspace sections" id="side">
+          <button role="tab" data-p="dashboard" aria-selected="true"><svg class="ic"><use href="#i-grid"/></svg>Dashboard</button>
+          <button role="tab" data-p="register" aria-selected="false"><svg class="ic"><use href="#i-plus"/></svg>Register book</button>
+          <button role="tab" data-p="search" aria-selected="false"><svg class="ic"><use href="#i-search"/></svg>Search</button>
+          <button role="tab" data-p="issue" aria-selected="false"><svg class="ic"><use href="#i-out"/></svg>Issue book</button>
+          <button role="tab" data-p="return" aria-selected="false"><svg class="ic"><use href="#i-in"/></svg>Return book</button>
+          <button role="tab" data-p="fine" aria-selected="false"><svg class="ic"><use href="#i-coin"/></svg>Fine calculator</button>
+          <button role="tab" data-p="security" aria-selected="false"><svg class="ic"><use href="#i-shield"/></svg>Exit security</button>
+          <button role="tab" data-p="users" aria-selected="false"><svg class="ic"><use href="#i-users"/></svg>Students</button>
+          <button role="tab" data-p="transactions" aria-selected="false"><svg class="ic"><use href="#i-doc"/></svg>Transactions</button>
+        </div>
+        <div class="main">
+
+          <div class="panel on" id="p-dashboard" role="tabpanel">
+            <h3>Admin dashboard</h3><p class="psub">What is happening in the library right now.</p>
+            <div class="cards4">
+              <div class="tile"><div class="v" id="d-books">0</div><div class="l">Total books</div></div>
+              <div class="tile"><div class="v lime" id="d-issued">0</div><div class="l">Currently issued</div></div>
+              <div class="tile"><div class="v warn" id="d-overdue">0</div><div class="l">Overdue</div></div>
+              <div class="tile"><div class="v" id="d-students">0</div><div class="l">Students</div></div>
+            </div>
+            <div class="tile"><div class="tile-h"><b>Checkouts</b><span>Last 14 days</span></div><svg class="chart" id="dashChart" viewBox="0 0 600 190" aria-hidden="true"></svg></div>
+            <div class="hd">Recent transactions</div>
+            <div class="tw"><table><thead><tr><th>Transaction</th><th>Student</th><th>Book</th><th>Date</th><th>Status</th></tr></thead><tbody id="dash-tbody"></tbody></table></div>
+          </div>
+
+          <div class="panel" id="p-register" role="tabpanel">
+            <h3>Register a new book</h3><p class="psub">Assign an RFID tag and record where the book lives.</p>
+            <div class="form-grid">
+              <div class="field"><label for="reg-title">Book title</label><input id="reg-title" placeholder="Introduction to Algorithms" autocomplete="off"></div>
+              <div class="field"><label for="reg-author">Author</label><input id="reg-author" placeholder="Thomas H. Cormen" autocomplete="off"></div>
+              <div class="field"><label for="reg-isbn">ISBN (optional)</label><input id="reg-isbn" placeholder="978-0-262-03384-8" autocomplete="off"></div>
+              <div class="field"><label for="reg-rfid">RFID tag ID</label><input id="reg-rfid" placeholder="RF-2025-0042" autocomplete="off"></div>
+              <div class="field"><label for="reg-shelf">Shelf location</label><input id="reg-shelf" placeholder="A-3-07" autocomplete="off"></div>
+              <div class="field"><label for="reg-cat">Category</label><select id="reg-cat"><option>Computer Science</option><option>Mathematics</option><option>Physics</option><option>Literature</option><option>Engineering</option><option>Reference</option></select></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-register">Register book</button>
+            <div class="hd">Registered books</div>
+            <div class="tw"><table><thead><tr><th>RFID</th><th>Title</th><th>Author</th><th>Shelf</th><th>Category</th><th>Status</th></tr></thead><tbody id="books-tbody"></tbody></table></div>
+          </div>
+
+          <div class="panel" id="p-search" role="tabpanel">
+            <h3>Search and locate</h3><p class="psub">Find a book by title, author or RFID tag.</p>
+            <div class="search"><svg class="ic"><use href="#i-search"/></svg><label class="sr" for="search-input">Search books</label><input id="search-input" placeholder="Search by title, author or RFID tag" autocomplete="off"></div>
+            <div class="seg" id="segStatus" role="group" aria-label="Filter by status">
+              <button data-f="all" aria-pressed="true">All</button><button data-f="available" aria-pressed="false">Available</button><button data-f="issued" aria-pressed="false">Issued</button><button data-f="overdue" aria-pressed="false">Overdue</button>
+            </div>
+            <div id="search-results"></div>
+          </div>
+
+          <div class="panel" id="p-issue" role="tabpanel">
+            <h3>Issue a book</h3><p class="psub">Enter the student ID or card, and the book's RFID tag.</p>
+            <div class="form-grid">
+              <div class="field"><label for="issue-student">Student ID or card</label><input id="issue-student" placeholder="STU-002" autocomplete="off"></div>
+              <div class="field"><label for="issue-rfid">Book RFID tag</label><input id="issue-rfid" placeholder="RF-2025-0001" autocomplete="off"></div>
+              <div class="field"><label for="issue-date">Issue date</label><input id="issue-date" type="date"></div>
+              <div class="field"><label for="issue-due">Due date</label><input id="issue-due" type="date"></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-issue">Issue book</button>
+            <div class="hd">Active loans</div>
+            <div class="tw"><table><thead><tr><th>Loan</th><th>Student</th><th>Book RFID</th><th>Title</th><th>Due</th><th>Status</th></tr></thead><tbody id="loans-tbody"></tbody></table></div>
+          </div>
+
+          <div class="panel" id="p-return" role="tabpanel">
+            <h3>Return a book</h3><p class="psub">The system checks the loan, closes it and frees the book.</p>
+            <div class="form-grid">
+              <div class="field"><label for="ret-rfid">Book RFID tag</label><input id="ret-rfid" placeholder="RF-2025-0002" autocomplete="off"></div>
+              <div class="field"><label for="ret-student">Student ID or card</label><input id="ret-student" placeholder="STU-001" autocomplete="off"></div>
+              <div class="field"><label for="ret-date">Return date</label><input id="ret-date" type="date"></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-return">Process return</button>
+            <div class="result" id="ret-result" role="status"></div>
+          </div>
+
+          <div class="panel" id="p-fine" role="tabpanel">
+            <h3>Fine calculator</h3><p class="psub">&#8377;5 for every day after the due date.</p>
+            <div class="form-grid">
+              <div class="field"><label for="fine-due">Due date</label><input id="fine-due" type="date"></div>
+              <div class="field"><label for="fine-ret">Return date</label><input id="fine-ret" type="date"></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-fine">Calculate fine</button>
+            <div class="result" id="fine-result" role="status"><span id="fine-label">Overdue fine</span><div class="fine-n" id="fine-amount">&#8377;0</div><span id="fine-detail"></span></div>
+          </div>
+
+          <div class="panel" id="p-security" role="tabpanel">
+            <h3>Exit security</h3><p class="psub">Scan a book at the gate. It passes only if there is a loan on record.</p>
+            <div class="form-grid">
+              <div class="field"><label for="sec-rfid">Book RFID at the gate</label><input id="sec-rfid" placeholder="RF-2025-0003" autocomplete="off"></div>
+              <div class="field"><label for="sec-student">Student card (optional)</label><input id="sec-student" placeholder="STU-001" autocomplete="off"></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-exit">Verify exit</button>
+            <div class="result" id="sec-result" role="status"></div>
+            <div class="hd">Exit log</div>
+            <div class="tw"><table><thead><tr><th>Time</th><th>Book RFID</th><th>Student</th><th>Result</th></tr></thead><tbody id="exit-tbody"></tbody></table></div>
+          </div>
+
+          <div class="panel" id="p-users" role="tabpanel">
+            <h3>Student management</h3><p class="psub">Add students and assign their RFID library cards.</p>
+            <div class="form-grid">
+              <div class="field"><label for="usr-name">Full name</label><input id="usr-name" placeholder="Ravi Kumar" autocomplete="off"></div>
+              <div class="field"><label for="usr-id">Student ID</label><input id="usr-id" placeholder="STU-009" autocomplete="off"></div>
+              <div class="field"><label for="usr-rfid">RFID card ID</label><input id="usr-rfid" placeholder="CARD-009" autocomplete="off"></div>
+              <div class="field"><label for="usr-dept">Department</label><select id="usr-dept"><option>CSE – Data Science</option><option>Computer Science</option><option>Information Technology</option><option>Electronics</option><option>Mechanical</option></select></div>
+            </div>
+            <button class="btn btn-primary btn-xs" id="b-student">Add student</button>
+            <div class="hd">All students</div>
+            <div class="tw"><table><thead><tr><th>Student ID</th><th>Name</th><th>RFID card</th><th>Department</th><th>Loans</th></tr></thead><tbody id="students-tbody"></tbody></table></div>
+          </div>
+
+          <div class="panel" id="p-transactions" role="tabpanel">
+            <h3>Transaction history</h3><p class="psub">Every issue and return, newest first.</p>
+            <div class="tw"><table><thead><tr><th>ID</th><th>Type</th><th>Student</th><th>Book</th><th>Date</th><th>Status</th></tr></thead><tbody id="tx-tbody"></tbody></table></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="workflow">
+    <div class="wf">
+      <div class="sec-head rv">
+        <h2>One scan. The whole transaction.</h2>
+        <p>From the first card tap to the live database update, a loan takes five steps and a few seconds.</p>
+      </div>
+      <div class="tl" id="tl">
+        <div class="tl-track"><div class="tl-fill" id="tlFill"></div></div>
+        <div class="tl-step"><span class="tl-n">1</span><h3>The student scans their card</h3><p>The reader at the desk identifies the student by card ID and pulls up their profile and borrowing history.</p></div>
+        <div class="tl-step"><span class="tl-n">2</span><h3>The book's tag is read</h3><p>Staff or a self-service station scans the tag on the spine and gets back the title, category and whether it is available.</p></div>
+        <div class="tl-step"><span class="tl-n">3</span><h3>The system checks the records</h3><p>The ESP32 passes the scan to the application, which confirms the student can borrow and the book is on the shelf.</p></div>
+        <div class="tl-step"><span class="tl-n">4</span><h3>The loan is recorded</h3><p>A loan is created with issue and due dates, linked to both student and book. The desk display confirms it.</p></div>
+        <div class="tl-step"><span class="tl-n">5</span><h3>Availability updates instantly</h3><p>The book shows as issued everywhere at once. At the exit gate, a book without a loan sets off the buzzer.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="tech">
+    <div class="sec-head rv">
+      <h2>Built for precision.</h2>
+      <p>Hardware and software chosen to do one job well: know where every book is.</p>
+    </div>
+    <div class="tech">
+      <div class="tech-row rv"><span class="mi"><svg class="ic"><use href="#i-radio"/></svg></span><div><h3>RFID system</h3><p>13.56 MHz readers and passive tags give every book and student card a unique identity.</p></div></div>
+      <div class="tech-row rv" style="--d:.06s"><span class="mi"><svg class="ic"><use href="#i-chip"/></svg></span><div><h3>ESP32 and Arduino</h3><p>The microcontroller reads each scan, drives the desk display and talks to the server.</p></div></div>
+      <div class="tech-row rv"><span class="mi"><svg class="ic"><use href="#i-db"/></svg></span><div><h3>MySQL database</h3><p>Books, students, loans and history stored with integrity constraints.</p></div></div>
+      <div class="tech-row rv" style="--d:.06s"><span class="mi"><svg class="ic"><use href="#i-code"/></svg></span><div><h3>Java and Spring Boot</h3><p>A REST backend handles loan validation, fine calculation and the API.</p></div></div>
+      <div class="tech-row rv"><span class="mi"><svg class="ic"><use href="#i-monitor"/></svg></span><div><h3>Web interface</h3><p>HTML, CSS and JavaScript for admin work, search and live status.</p></div></div>
+      <div class="tech-row rv" style="--d:.06s"><span class="mi"><svg class="ic"><use href="#i-bell"/></svg></span><div><h3>Buzzer alert</h3><p>Sounds when the gate reader detects a book that was never issued.</p></div></div>
+    </div>
+  </section>
+
+  <section class="sec" id="team">
+    <div class="sec-head rv">
+      <h2>Presented by.</h2>
+      <p>Department of Computer Science and Engineering, Data Science.</p>
+    </div>
+    <div class="team">
+      <div class="person glass rv"><div class="av">N</div><h3>Nandha Kishore S</h3><p>CSE, Data Science</p></div>
+      <div class="person glass rv" style="--d:.06s"><div class="av">G</div><h3>Gokul Siddharth B</h3><p>CSE, Data Science</p></div>
+      <div class="person glass rv" style="--d:.12s"><div class="av">S</div><h3>Samuel Joseph J</h3><p>CSE, Data Science</p></div>
+      <div class="person glass rv" style="--d:.18s"><div class="av">S</div><h3>Syed Fakrudeen Ali Ahamed A</h3><p>CSE, Data Science</p></div>
+    </div>
+  </section>
+
+  <section class="finale">
+    <h2 class="rv">Know where every book is.</h2>
+    <p class="rv" style="--d:.1s">Open the workspace and run a full loan from issue to exit gate.</p>
+    <div class="cta-row rv" style="--d:.2s"><a href="#workspace" class="btn btn-primary">Open the workspace</a><a href="#modules" class="btn btn-ghost">Review the modules</a></div>
+    <div class="glow" aria-hidden="true"></div>
+  </section>
+</main>
+
+<footer>
+  <a href="#top" class="logo"><svg viewBox="0 0 24 24" width="22" height="22" style="fill:none;stroke:#C6FF35;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><use href="#i-logo"/></svg>LibraryOS</a>
+  <nav aria-label="Footer"><a href="#modules">Modules</a><a href="#workspace">Workspace</a><a href="#workflow">Workflow</a><a href="#tech">Technology</a></nav>
+  <span>Smart RFID Library Management System, academic project</span>
+</footer>
+
+<div id="toast" aria-live="polite"></div>
+
+<script>
+const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeExpo = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const iso = (off = 0) => { const d = new Date(); d.setDate(d.getDate() + off); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const today = () => iso(0);
+const daysDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+
+/* ================= data (in-memory demo database) ================= */
+const DB = {
+  books: [
+    { rfid: 'RF-2025-0001', title: 'Introduction to Algorithms', author: 'Thomas H. Cormen', isbn: '978-0-262-03384-8', shelf: 'A-1-01', cat: 'Computer Science', status: 'available' },
+    { rfid: 'RF-2025-0002', title: 'Data Structures & Algorithms', author: 'Mark Allen Weiss', isbn: '978-0-13-284737-7', shelf: 'A-1-02', cat: 'Computer Science', status: 'issued' },
+    { rfid: 'RF-2025-0003', title: 'Database System Concepts', author: 'Silberschatz', isbn: '978-0-07-352332-3', shelf: 'B-2-05', cat: 'Computer Science', status: 'available' },
+    { rfid: 'RF-2025-0004', title: 'Operating System Concepts', author: 'Silberschatz', isbn: '978-0-470-12872-5', shelf: 'B-2-06', cat: 'Computer Science', status: 'available' },
+    { rfid: 'RF-2025-0005', title: 'Computer Networks', author: 'Andrew Tanenbaum', isbn: '978-0-13-212695-3', shelf: 'C-3-10', cat: 'Computer Science', status: 'overdue' },
+    { rfid: 'RF-2025-0006', title: 'Machine Learning', author: 'Tom Mitchell', isbn: '978-0-07-042807-2', shelf: 'D-4-03', cat: 'Computer Science', status: 'available' },
+    { rfid: 'RF-2025-0007', title: 'Calculus: Early Transcendentals', author: 'James Stewart', isbn: '978-0-538-49790-9', shelf: 'E-1-08', cat: 'Mathematics', status: 'available' },
+    { rfid: 'RF-2025-0008', title: 'Linear Algebra Done Right', author: 'Sheldon Axler', isbn: '978-0-387-98258-6', shelf: 'E-2-02', cat: 'Mathematics', status: 'available' },
+    { rfid: 'RF-2025-0009', title: 'Signals and Systems', author: 'Oppenheim', isbn: '978-0-13-814757-0', shelf: 'F-3-11', cat: 'Engineering', status: 'available' },
+    { rfid: 'RF-2025-0010', title: 'Digital Logic Design', author: 'Morris Mano', isbn: '978-0-13-198926-9', shelf: 'F-4-01', cat: 'Engineering', status: 'available' },
+    { rfid: 'RF-2025-0011', title: 'Python for Data Analysis', author: 'Wes McKinney', isbn: '978-1-491-91205-8', shelf: 'A-2-07', cat: 'Computer Science', status: 'available' },
+    { rfid: 'RF-2025-0012', title: 'Deep Learning', author: 'Ian Goodfellow', isbn: '978-0-262-03561-3', shelf: 'A-3-04', cat: 'Computer Science', status: 'issued' },
+  ],
+  students: [
+    { id: 'STU-001', name: 'Arun Prakash', rfid: 'CARD-001', dept: 'CSE – Data Science', loans: 1 },
+    { id: 'STU-002', name: 'Priya Raman', rfid: 'CARD-002', dept: 'CSE – Data Science', loans: 0 },
+    { id: 'STU-003', name: 'Karthik Selvan', rfid: 'CARD-003', dept: 'Information Technology', loans: 1 },
+    { id: 'STU-004', name: 'Divya Menon', rfid: 'CARD-004', dept: 'Computer Science', loans: 1 },
+    { id: 'STU-005', name: 'Rahul Nair', rfid: 'CARD-005', dept: 'Electronics', loans: 0 },
+    { id: 'STU-006', name: 'Sneha Iyer', rfid: 'CARD-006', dept: 'CSE – Data Science', loans: 0 },
+    { id: 'STU-007', name: 'Vikram Sundaram', rfid: 'CARD-007', dept: 'Mechanical', loans: 0 },
+    { id: 'STU-008', name: 'Ananya Krishnan', rfid: 'CARD-008', dept: 'Computer Science', loans: 0 },
+  ],
+  loans: [
+    { id: 'LN-001', student: 'STU-001', studentName: 'Arun Prakash', bookRfid: 'RF-2025-0002', title: 'Data Structures & Algorithms', issue: iso(-10), due: iso(4), status: 'active' },
+    { id: 'LN-002', student: 'STU-003', studentName: 'Karthik Selvan', bookRfid: 'RF-2025-0005', title: 'Computer Networks', issue: iso(-24), due: iso(-10), status: 'overdue' },
+    { id: 'LN-003', student: 'STU-004', studentName: 'Divya Menon', bookRfid: 'RF-2025-0012', title: 'Deep Learning', issue: iso(-3), due: iso(11), status: 'active' },
+  ],
+  transactions: [
+    { id: 'TX-001', type: 'ISSUE', student: 'STU-003', book: 'Computer Networks', date: iso(-24), status: 'overdue' },
+    { id: 'TX-002', type: 'RETURN', student: 'STU-002', book: 'Operating System Concepts', date: iso(-12), status: 'closed' },
+    { id: 'TX-003', type: 'ISSUE', student: 'STU-001', book: 'Data Structures & Algorithms', date: iso(-10), status: 'active' },
+    { id: 'TX-004', type: 'RETURN', student: 'STU-005', book: 'Signals and Systems', date: iso(-6), status: 'closed' },
+    { id: 'TX-005', type: 'ISSUE', student: 'STU-004', book: 'Deep Learning', date: iso(-3), status: 'active' },
+  ],
+  exitLog: [],
+  finesTotal: 310,
+  checkouts: [6, 8, 7, 11, 9, 5, 4, 10, 12, 9, 13, 11, 8, 3],
+};
+const FINE_PER_DAY = 5;
+const MAX_LOANS = 3;
+const findStudent = q => { q = q.toLowerCase(); return DB.students.find(s => s.id.toLowerCase() === q || s.rfid.toLowerCase() === q); };
+const statusBadge = s => `<span class="badge ${s === 'available' || s === 'closed' ? 'ok' : s === 'overdue' ? 'late' : 'out'}">${esc(s.toUpperCase())}</span>`;
+
+/* ================= toast ================= */
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type === 'warn' ? 'warn' : '');
+  el.innerHTML = `<svg class="ic"><use href="#${type === 'warn' ? 'i-alert' : 'i-check'}"/></svg><span>${msg}</span>`;
+  $('#toast').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(() => el.remove(), 400); }, 3600);
+}
+
+/* ================= counters ================= */
+function setNum(el, to, fmt = v => Math.round(v).toLocaleString('en-US')) {
+  if (!el) return;
+  const from = el._v ?? 0; el._v = to;
+  cancelAnimationFrame(el._r);
+  if (reduce || from === to) { el.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 1000;
+  const step = now => { const p = clamp((now - t0) / dur, 0, 1); el.textContent = fmt(lerp(from, to, easeExpo(p))); if (p < 1) el._r = requestAnimationFrame(step); };
+  el._r = requestAnimationFrame(step);
+}
+let barSeen = false, heroSeen = false;
+function metrics() {
+  const open = DB.loans.filter(l => l.status !== 'returned');
+  return { books: DB.books.length, open: open.length, overdue: open.filter(l => l.status === 'overdue').length, students: DB.students.length };
+}
+function updateStats() {
+  const m = metrics();
+  setNum($('#d-books'), m.books); setNum($('#d-issued'), m.open); setNum($('#d-overdue'), m.overdue); setNum($('#d-students'), m.students);
+  if (barSeen) {
+    setNum($('#s1'), m.books); setNum($('#s2'), m.open); setNum($('#s3'), m.students);
+    setNum($('#s4'), DB.finesTotal, v => '₹' + Math.round(v).toLocaleString('en-US'));
+    setNum($('#s5'), DB.exitLog.length);
+  }
+  if (heroSeen) { setNum($('#hk1'), m.books); setNum($('#hk2'), m.open); setNum($('#hk3'), m.overdue); }
+}
+
+/* ================= charts ================= */
+function smooth(pts) {
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+function drawChart(svg, animate) {
+  const W = 600, H = 190, pad = 16, v = DB.checkouts, mx = Math.max(...v) * 1.15, mn = 0;
+  const pts = v.map((y, i) => [i / (v.length - 1) * W, H - pad - (y - mn) / (mx - mn) * (H - pad * 2)]);
+  const line = smooth(pts), last = pts[pts.length - 1], gid = 'g' + svg.id;
+  let grid = '';
+  for (let i = 0; i < 4; i++) { const y = pad + i * (H - pad * 2) / 3; grid += `<line class="grid-l" x1="0" x2="${W}" y1="${y}" y2="${y}"/>`; }
+  svg.classList.remove('in');
+  svg.innerHTML = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C6FF35" stop-opacity=".30"/><stop offset="1" stop-color="#C6FF35" stop-opacity="0"/></linearGradient></defs>${grid}
+    <path class="c-area" fill="url(#${gid})" d="${line} L${W},${H} L0,${H} Z"/>
+    <path class="c-line" pathLength="1" d="${line}"/>
+    <circle class="c-halo" cx="${last[0]}" cy="${last[1]}" r="6"/><circle class="c-dot" cx="${last[0]}" cy="${last[1]}" r="5"/>`;
+  if (animate) { void svg.getBoundingClientRect(); requestAnimationFrame(() => svg.classList.add('in')); }
+}
+
+/* ================= workspace panels ================= */
+function showPanel(name) {
+  $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + name));
+  $$('#side button').forEach(b => b.setAttribute('aria-selected', b.dataset.p === name));
+  const act = $(`#side button[data-p="${name}"]`);
+  if (act && innerWidth <= 820) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  ({ dashboard: renderDashboard, register: renderBooks, search: renderSearch, issue: renderLoans, users: renderStudents, transactions: renderTransactions, security: renderExitLog }[name] || (() => {}))();
+}
+$$('#side button').forEach(b => b.addEventListener('click', () => showPanel(b.dataset.p)));
+$$('[data-open]').forEach(b => b.addEventListener('click', () => {
+  showPanel(b.dataset.open);
+  $('#workspace').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+}));
+
+function renderDashboard() {
+  $('#dash-tbody').innerHTML = DB.transactions.slice(-6).reverse().map(t => `<tr><td class="code">${esc(t.id)}</td><td>${esc(t.student)}</td><td>${esc(t.book)}</td><td class="mut">${esc(t.date)}</td><td>${statusBadge(t.status)}</td></tr>`).join('');
+  drawChart($('#dashChart'), true);
+  updateStats();
+}
+function renderBooks() {
+  $('#books-tbody').innerHTML = DB.books.map(b => `<tr><td class="code">${esc(b.rfid)}</td><td>${esc(b.title)}</td><td class="mut">${esc(b.author)}</td><td class="code">${esc(b.shelf)}</td><td class="mut">${esc(b.cat)}</td><td>${statusBadge(b.status)}</td></tr>`).join('');
+}
+function renderLoans() {
+  const rows = DB.loans.filter(l => l.status !== 'returned');
+  $('#loans-tbody').innerHTML = rows.length ? rows.map(l => `<tr><td class="code">${esc(l.id)}</td><td>${esc(l.student)}</td><td class="code">${esc(l.bookRfid)}</td><td>${esc(l.title)}</td><td class="mut">${esc(l.due)}</td><td>${statusBadge(l.status === 'active' ? 'issued' : l.status)}</td></tr>`).join('') : '<tr><td colspan="6" class="mut">No active loans.</td></tr>';
+}
+function renderStudents() {
+  $('#students-tbody').innerHTML = DB.students.map(s => `<tr><td class="code">${esc(s.id)}</td><td>${esc(s.name)}</td><td class="code">${esc(s.rfid)}</td><td class="mut">${esc(s.dept)}</td><td><span class="badge ${s.loans > 0 ? 'out' : 'ok'}">${s.loans}</span></td></tr>`).join('');
+}
+function renderTransactions() {
+  $('#tx-tbody').innerHTML = DB.transactions.slice().reverse().map(t => `<tr><td class="code">${esc(t.id)}</td><td><span class="badge ${t.type === 'ISSUE' ? 'out' : 'ok'}">${esc(t.type)}</span></td><td>${esc(t.student)}</td><td>${esc(t.book)}</td><td class="mut">${esc(t.date)}</td><td>${statusBadge(t.status)}</td></tr>`).join('');
+}
+function renderExitLog() {
+  $('#exit-tbody').innerHTML = DB.exitLog.length ? DB.exitLog.slice().reverse().map(e => `<tr><td class="mut">${esc(e.time)}</td><td class="code">${esc(e.rfid)}</td><td>${esc(e.student)}</td><td><span class="badge ${e.result === 'CLEAR' ? 'ok' : 'late'}">${esc(e.result)}</span></td></tr>`).join('') : '<tr><td colspan="4" class="mut">No exit checks yet.</td></tr>';
+}
+
+/* search */
+let filter = 'all';
+function renderSearch() {
+  const q = ($('#search-input').value || '').toLowerCase().trim();
+  const hits = DB.books.filter(b => (filter === 'all' || b.status === filter) && (!q || [b.title, b.author, b.rfid].some(x => x.toLowerCase().includes(q))));
+  $('#search-results').innerHTML = hits.length ? hits.map(b => `<div class="res"><div><b>${esc(b.title)}</b><small>${esc(b.author)}, ${esc(b.isbn || 'no ISBN')}. Shelf <strong>${esc(b.shelf)}</strong></small><small>${esc(b.rfid)}, ${esc(b.cat)}</small></div>${statusBadge(b.status)}</div>`).join('') : '<p class="empty">No books match that search.</p>';
+}
+$('#search-input').addEventListener('input', renderSearch);
+$$('#segStatus button').forEach(b => b.addEventListener('click', () => { filter = b.dataset.f; $$('#segStatus button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderSearch(); }));
+
+/* register */
+$('#b-register').addEventListener('click', () => {
+  const v = id => $('#' + id).value.trim();
+  const title = v('reg-title'), author = v('reg-author'), isbn = v('reg-isbn'), rfid = v('reg-rfid'), shelf = v('reg-shelf'), cat = $('#reg-cat').value;
+  if (!title || !author || !rfid || !shelf) return toast('Fill in title, author, RFID tag and shelf.', 'warn');
+  if (DB.books.some(b => b.rfid.toLowerCase() === rfid.toLowerCase())) return toast('That RFID tag is already registered.', 'warn');
+  DB.books.push({ rfid, title, author, isbn, shelf, cat, status: 'available' });
+  ['reg-title', 'reg-author', 'reg-isbn', 'reg-rfid', 'reg-shelf'].forEach(id => $('#' + id).value = '');
+  toast(`Registered &ldquo;${esc(title)}&rdquo;.`); renderBooks(); updateStats();
+});
+
+/* issue */
+$('#b-issue').addEventListener('click', () => {
+  const sid = $('#issue-student').value.trim(), rfid = $('#issue-rfid').value.trim();
+  const date = $('#issue-date').value || today();
+  if (!sid || !rfid) return toast('Enter the student and the book RFID tag.', 'warn');
+  const student = findStudent(sid);
+  if (!student) return toast('Student not found. Add them under Students first.', 'warn');
+  const book = DB.books.find(b => b.rfid.toLowerCase() === rfid.toLowerCase());
+  if (!book) return toast('That book tag is not in the system.', 'warn');
+  if (book.status !== 'available') return toast(`That book is currently ${book.status}.`, 'warn');
+  if (student.loans >= MAX_LOANS) return toast(`${esc(student.name)} already has ${MAX_LOANS} books out.`, 'warn');
+  let due = $('#issue-due').value;
+  if (!due) { const d = new Date(date); d.setDate(d.getDate() + 14); due = d.toISOString().split('T')[0]; }
+  if (daysDiff(date, due) < 0) return toast('The due date cannot be before the issue date.', 'warn');
+  const n = DB.loans.length + 1, t = DB.transactions.length + 1;
+  DB.loans.push({ id: 'LN-' + String(n).padStart(3, '0'), student: student.id, studentName: student.name, bookRfid: book.rfid, title: book.title, issue: date, due, status: 'active' });
+  DB.transactions.push({ id: 'TX-' + String(t).padStart(3, '0'), type: 'ISSUE', student: student.id, book: book.title, date, status: 'active' });
+  book.status = 'issued'; student.loans++;
+  if (date === today()) DB.checkouts[DB.checkouts.length - 1]++;
+  $('#issue-student').value = ''; $('#issue-rfid').value = '';
+  toast(`Issued &ldquo;${esc(book.title)}&rdquo; to ${esc(student.name)}, due ${due}.`);
+  renderLoans(); updateStats(); drawChart($('#heroChart'), false); $('#heroChart').classList.add('in');
+});
+
+/* return */
+function showResult(el, kind, html) { el.className = 'result show ' + kind; el.innerHTML = html; }
+$('#b-return').addEventListener('click', () => {
+  const rfid = $('#ret-rfid').value.trim(), sid = $('#ret-student').value.trim(), date = $('#ret-date').value || today();
+  if (!rfid || !sid) return toast('Enter the book tag and the student.', 'warn');
+  const st = findStudent(sid);
+  const loan = DB.loans.find(l => l.bookRfid.toLowerCase() === rfid.toLowerCase() && l.status !== 'returned' && (st ? l.student === st.id : l.student.toLowerCase() === sid.toLowerCase()));
+  const res = $('#ret-result');
+  if (!loan) { showResult(res, 'no', '<b>No active loan found</b><span>Nothing matches that book tag and student together.</span>'); return toast('No active loan found.', 'warn'); }
+  const late = Math.max(0, daysDiff(loan.due, date)), fine = late * FINE_PER_DAY;
+  loan.status = 'returned'; loan.returnDate = date;
+  const book = DB.books.find(b => b.rfid === loan.bookRfid); if (book) book.status = 'available';
+  const s = DB.students.find(x => x.id === loan.student); if (s && s.loans > 0) s.loans--;
+  DB.finesTotal += fine;
+  DB.transactions.push({ id: 'TX-' + String(DB.transactions.length + 1).padStart(3, '0'), type: 'RETURN', student: loan.student, book: loan.title, date, status: 'closed' });
+  showResult(res, 'ok', `<b>Return processed</b><span>${esc(loan.title)}<br>${late ? `Returned ${late} day${late > 1 ? 's' : ''} late. Fine: &#8377;${fine}` : 'Returned on time. No fine.'}</span>`);
+  toast(`Returned &ldquo;${esc(loan.title)}&rdquo;. ${fine ? 'Fine &#8377;' + fine + '.' : 'No fine.'}`, fine ? 'warn' : 'ok');
+  updateStats(); renderLoans();
+});
+
+/* fine */
+$('#b-fine').addEventListener('click', () => {
+  const due = $('#fine-due').value, ret = $('#fine-ret').value;
+  if (!due || !ret) return toast('Choose both a due date and a return date.', 'warn');
+  const days = daysDiff(due, ret), fine = Math.max(0, days) * FINE_PER_DAY;
+  const res = $('#fine-result'); res.className = 'result show ' + (fine ? 'no' : 'ok');
+  $('#fine-amount').textContent = '₹' + fine;
+  $('#fine-amount').style.color = fine ? 'var(--warn)' : 'var(--lime)';
+  $('#fine-detail').textContent = days > 0 ? `${days} day${days > 1 ? 's' : ''} overdue at ₹${FINE_PER_DAY} per day.` : days === 0 ? 'Returned on the due date. No fine.' : `Returned ${-days} day${-days > 1 ? 's' : ''} early. No fine.`;
+});
+
+/* exit */
+$('#b-exit').addEventListener('click', () => {
+  const rfid = $('#sec-rfid').value.trim(), student = $('#sec-student').value.trim();
+  if (!rfid) return toast('Enter the book RFID tag.', 'warn');
+  const book = DB.books.find(b => b.rfid.toLowerCase() === rfid.toLowerCase());
+  const loan = book && DB.loans.find(l => l.bookRfid === book.rfid && l.status !== 'returned');
+  const res = $('#sec-result'); let ok = false;
+  if (!book) showResult(res, 'no', '<b>Unknown tag</b><span>This book is not in the system. Gate alarm triggered.</span>');
+  else if (loan) { ok = true; showResult(res, 'ok', `<b>Clear to leave</b><span>${esc(book.title)} is on loan to ${esc(loan.studentName)}, due ${esc(loan.due)}.</span>`); }
+  else showResult(res, 'no', `<b>Unauthorized removal</b><span>${esc(book.title)} has no loan on record. Buzzer triggered.</span>`);
+  DB.exitLog.push({ time: new Date().toLocaleTimeString(), rfid, student: student || '—', result: ok ? 'CLEAR' : 'ALERT' });
+  renderExitLog(); updateStats();
+  toast(ok ? 'Exit verified. Valid loan.' : 'Alert: unauthorized exit detected.', ok ? 'ok' : 'warn');
+});
+
+/* students */
+$('#b-student').addEventListener('click', () => {
+  const name = $('#usr-name').value.trim(), id = $('#usr-id').value.trim(), rfid = $('#usr-rfid').value.trim(), dept = $('#usr-dept').value;
+  if (!name || !id || !rfid) return toast('Fill in name, student ID and card ID.', 'warn');
+  if (DB.students.some(s => s.id.toLowerCase() === id.toLowerCase() || s.rfid.toLowerCase() === rfid.toLowerCase())) return toast('That student ID or card is already in use.', 'warn');
+  DB.students.push({ id, name, rfid, dept, loans: 0 });
+  ['usr-name', 'usr-id', 'usr-rfid'].forEach(i => $('#' + i).value = '');
+  toast(`${esc(name)} added.`); renderStudents(); updateStats();
+});
+
+/* date defaults */
+$('#issue-date').value = today(); $('#ret-date').value = today(); $('#fine-ret').value = today();
+$('#issue-due').value = iso(14); $('#fine-due').value = iso(-5);
+
+/* ================= hero scan feed ================= */
+const feed = $('#feed');
+function feedItem(ok, title, sub) {
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="fi ${ok ? '' : 'no'}"><svg class="ic"><use href="#${ok ? 'i-radio' : 'i-alert'}"/></svg></span><div>${title}<small>${sub}</small></div>`;
+  feed.prepend(li);
+  while (feed.children.length > 4) feed.lastElementChild.remove();
+}
+function simulateScan() {
+  const s = DB.students[Math.floor(Math.random() * DB.students.length)], b = DB.books[Math.floor(Math.random() * DB.books.length)];
+  const r = Math.random();
+  const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (r < .15) feedItem(false, `Gate alarm: ${esc(b.title)}`, `No loan on record, ${t}`);
+  else if (r < .55) feedItem(true, `${esc(s.name)} borrowed ${esc(b.title)}`, `Desk 1, ${t}`);
+  else if (r < .8) feedItem(true, `${esc(b.title)} returned`, `Return slot, ${t}`);
+  else feedItem(true, `Gate cleared ${esc(b.title)}`, `Valid loan, ${t}`);
+}
+feedItem(true, 'Deep Learning borrowed by Divya Menon', 'Desk 1, 3 days ago');
+feedItem(true, 'Gate cleared Data Structures &amp; Algorithms', 'Valid loan');
+
+/* ================= intro + reveal ================= */
+const h1 = $('#h1'), words = h1.textContent.trim().split(/\s+/);
+h1.setAttribute('aria-label', words.join(' '));
+h1.innerHTML = words.map((w, i) => `<span class="word" style="--i:${i}" aria-hidden="true">${w}</span>`).join(' ');
+requestAnimationFrame(() => setTimeout(() => document.body.classList.add('ready'), 120));
+
+drawChart($('#heroChart'), false);
+setTimeout(() => {
+  $('#heroChart').classList.add('in'); heroSeen = true; updateStats();
+  if (!reduce) setInterval(simulateScan, 3600);
+}, reduce ? 0 : 3300);
+
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add('in'); io.unobserve(e.target);
+  if (e.target.id === 'statbar') { barSeen = true; updateStats(); }
+}), { threshold: .15, rootMargin: '0px 0px -6% 0px' });
+$$('.rv').forEach(el => io.observe(el));
+
+/* nav */
+const nav = $('#nav'), burger = $('#burger');
+burger.addEventListener('click', () => { const o = nav.classList.toggle('open'); burger.setAttribute('aria-expanded', o); burger.setAttribute('aria-label', o ? 'Close menu' : 'Open menu'); });
+$$('.links a').forEach(a => a.addEventListener('click', () => { nav.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }));
+
+/* glass glow (batched to one update per frame) */
+let gp = null;
+document.addEventListener('pointermove', e => {
+  const g = e.target.closest && e.target.closest('.glass'); if (!g) return;
+  if (!gp) requestAnimationFrame(() => { const r = gp.g.getBoundingClientRect(); gp.g.style.setProperty('--mx', (gp.x - r.left) + 'px'); gp.g.style.setProperty('--my', (gp.y - r.top) + 'px'); gp = null; });
+  gp = { g, x: e.clientX, y: e.clientY };
+}, { passive: true });
+
+/* ================= scroll, parallax, tilt, timeline ================= */
+const tilt = $('#tilt'), copy = $('#heroCopy'), tl = $('#tl'), tlFill = $('#tlFill'), steps = $$('.tl-step');
+let mx = 0, my = 0, cx = 0, cy = 15, lastSY = -1, solid = false, tlTop = 0, tlH = 0, stepTops = [], lastP = -1;
+addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; }, { passive: true });
+function measure() { tlTop = tl.getBoundingClientRect().top + scrollY; tlH = tl.offsetHeight; stepTops = steps.map(s => s.offsetTop); lastSY = -1; }
+measure(); addEventListener('resize', measure); addEventListener('load', measure);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+function timeline(sy) {
+  const p = clamp(innerHeight * .55 - (tlTop - sy), 0, tlH - 40);
+  if (Math.abs(p - lastP) > .5) { lastP = p; tlFill.style.setProperty('--p', p + 'px'); }
+  steps.forEach((s, i) => { const on = stepTops[i] + 20 <= p + 6; if (on !== s._on) { s._on = on; s.classList.toggle('on', on); } });
+}
+function frame() {
+  const sy = scrollY, f = clamp(sy / 520, 0, 1);
+  const tx = mx * 5, trx = 15 * (1 - easeOut(f)) - my * 3.5;
+  const moving = !reduce && sy < innerHeight * 1.1 && (Math.abs(tx - cx) > .005 || Math.abs(trx - cy) > .005);
+  if (sy === lastSY && !moving) return;            // nothing changed: do no work
+  const sc = sy > 30; if (sc !== solid) { solid = sc; nav.classList.toggle('solid', sc); }
+  if (!reduce && sy < innerHeight * 1.1) {          // hero effects only while the hero is on screen
+    cx = lerp(cx, tx, .06); cy = lerp(cy, trx, .08);
+    tilt.style.transform = `rotateX(${cy.toFixed(2)}deg) rotateY(${cx.toFixed(2)}deg) translateY(${(-sy * .04).toFixed(1)}px)`;
+    copy.style.transform = `translateY(${(sy * .22).toFixed(1)}px)`;
+    copy.style.opacity = (1 - f * 1.1).toFixed(3);
+  }
+  if (sy !== lastSY) timeline(sy);
+  lastSY = sy;
+}
+(function loop() { frame(); requestAnimationFrame(loop); })();
+
+/* ================= light ribbons (scroll-driven, optimised) ================= */
+(() => {
+  const c = $('#ribbons'), x = c.getContext('2d');
+  const R = [
+    { y: .30, amp: .10, f: 1.1, f2: 2.3, sp: .20, ph: .4, n: 14, spread: .075, a: .55, depth: .30, col: [198, 255, 53] },
+    { y: .42, amp: .13, f: .9, f2: 1.9, sp: .15, ph: 2.1, n: 12, spread: .060, a: .42, depth: .45, col: [198, 255, 53] },
+    { y: .55, amp: .11, f: 1.3, f2: 2.7, sp: .24, ph: 4.0, n: 10, spread: .085, a: .34, depth: .65, col: [150, 235, 70] },
+    { y: .22, amp: .08, f: 1.6, f2: 3.1, sp: .17, ph: 5.2, n: 9, spread: .050, a: .26, depth: .18, col: [60, 190, 120] },
+    { y: .68, amp: .09, f: 1.0, f2: 2.1, sp: .13, ph: 1.3, n: 10, spread: .070, a: .30, depth: .85, col: [40, 160, 100] },
+    { y: .85, amp: .12, f: .8, f2: 1.7, sp: .11, ph: 3.3, n: 8, spread: .090, a: .22, depth: 1.1, col: [198, 255, 53] },
+  ];
+  let w, h, grads = [], dirty = true, qual = innerWidth < 700 ? .65 : .85, slow = 0, dpr = Math.min(devicePixelRatio || 1, 2);
+  function size() {
+    w = innerWidth; h = innerHeight;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);   // full device resolution for crisp lines
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    grads = R.map(r => { const [cr, cg, cb] = r.col, g = x.createLinearGradient(0, 0, w, 0);
+      g.addColorStop(0, `rgba(${cr},${cg},${cb},0)`); g.addColorStop(.22, `rgba(${cr},${cg},${cb},1)`);
+      g.addColorStop(.78, `rgba(${cr},${cg},${cb},1)`); g.addColorStop(1, `rgba(${cr},${cg},${cb},0)`); return g; });
+    dirty = true;
+  }
+  size();
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(size, 120); });
+
+  const t0 = performance.now();
+  let sp = scrollY, last = t0, vel = 0, lastSp = -1e9, lastDraw = 0;
+  function draw(now) {
+    requestAnimationFrame(draw);
+    const t = reduce ? 6 : (now - t0) / 1000;
+    // eased scroll position: forward on scroll down, smoothly reverses on scroll up
+    const dt = Math.min(.05, (now - last) / 1000) || .016; last = now;
+    const prev = sp;
+    sp += (scrollY - sp) * (1 - Math.exp(-dt * 5.5));
+    vel = lerp(vel, (sp - prev) / dt, .1);
+    const introRun = !reduce && t < 5;
+    if (!introRun && !dirty && Math.abs(sp - lastSp) < .12) return;   // at rest: draw nothing
+    if (now - lastDraw < 14) return;                                   // cap at ~60 fps even on 120/144 Hz screens
+    lastDraw = now; dirty = false; lastSp = sp;
+    const began = performance.now();
+
+    const m = sp / 60 + 2;
+    const stretch = 1 + clamp(Math.abs(vel) / 2400, 0, .5);
+    const intro = reduce ? 1 : easeInOut(clamp((t - .4) / 3.4, 0, 1));
+    const fade = 1 - clamp(sp / (innerHeight * 1.3), 0, 1) * .55;
+    const STEP = w < 700 ? 26 : 28;
+    const wave = (r, base, o, px) => {
+      const u = px / w;
+      return base + Math.sin(u * r.f * 6.283 - m * r.sp + r.ph) * r.amp * h + Math.sin(u * r.f2 * 6.283 + m * r.sp * .7 + r.ph * 2) * r.amp * .38 * h
+        + o * r.spread * stretch * h * (.55 + .45 * Math.sin(u * 4.7 + r.ph - m * .22));
+    };
+    x.clearRect(0, 0, w, h); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round'; x.lineJoin = 'round';
+    for (let ri = 0; ri < R.length; ri++) {
+      const r = R[ri], base = r.y * h - sp * r.depth * .35;
+      if (base < -h * .4 || base > h * 1.4) continue;
+      x.strokeStyle = grads[ri];
+      const maxX = (w + 40) * (reduce ? 1 : easeOut(clamp(t / 4.2 - r.y * .15, 0, 1)));
+      const n = Math.max(4, Math.round(r.n * qual));
+      for (let k = 0; k < n; k++) {
+        const o = (k / (n - 1) - .5) * 2;
+        x.beginPath();
+        let lx = 0, ly = 0, first = true;
+        for (let px = -20; px <= maxX; px += STEP) {
+          const yy = wave(r, base, o, px);
+          if (first) { x.moveTo(px, yy); first = false; }
+          else x.quadraticCurveTo(lx, ly, (lx + px) / 2, (ly + yy) / 2);   // smooth curve, no visible segments
+          lx = px; ly = yy;
+        }
+        x.lineTo(lx, ly);
+        const alpha = r.a * 1.15 * (1 - Math.abs(o) * .55) * intro * fade;
+        if (k % 5 === 0) { x.globalAlpha = alpha * .22; x.lineWidth = 3.4; x.stroke(); }   // soft glow
+        x.globalAlpha = alpha; x.lineWidth = 1; x.stroke();                                 // core line
+        if (k % 3 === 1) {                                                                  // travelling light pulse
+          const span = w + 500, head = (((sp * (.6 + r.depth * .5) + k * 173) % span) + span) % span - 250;
+          x.lineWidth = 1.7;
+          for (let j = 0; j < 4; j++) {
+            const x0 = head - (j + 1) * 30, x1 = head - j * 30;
+            if (x1 < -20 || x0 > maxX) continue;
+            x.globalAlpha = Math.min(1, alpha * 2.2) * (1 - j / 4);
+            x.beginPath(); x.moveTo(x0, wave(r, base, o, x0)); x.lineTo(x1, wave(r, base, o, x1)); x.stroke();
+          }
+        }
+      }
+    }
+    x.globalAlpha = 1;
+    // if this machine is struggling, first use fewer strands, then slightly lower resolution
+    slow = lerp(slow, performance.now() - began, .1);
+    if (slow > 9) { if (qual > .5) qual *= .92; else if (dpr > 1.25) { dpr = Math.max(1.25, dpr * .85); size(); } slow = 5; }
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ================= init ================= */
+renderDashboard(); renderBooks(); renderSearch(); renderLoans(); renderStudents(); renderTransactions(); renderExitLog();
+</script>
+</body>
+</html>
